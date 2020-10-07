@@ -9,30 +9,6 @@ public class Vector implements Tensor, Comparable<Vector> {
 
 	public static final Vector ZERO_DIMENSION = new Vector();
 
-	protected static final VectorFunction MULTIPLY_TO_CONSTANT = (vector, term) -> {
-		double[] resultVector = vector.getCoordsClone();
-		for (int i = 0; i < vector.dimension(); i++)
-			resultVector[i] *= term.coords[0];
-		return new Vector(resultVector);
-	};
-
-	private static final VectorFunction ADDER = (vector, term) -> {
-		double[] resultVector;
-		if (vector.dimension() >= term.dimension()) {
-			resultVector = vector.getCoordsClone();
-			for (int i = 0; i < term.dimension(); i++)
-				resultVector[i] += term.coords[i];
-		} else {
-			resultVector = term.getCoordsClone();
-			for (int i = 0; i < vector.dimension(); i++)
-				resultVector[i] += vector.coords[i];
-		}
-		return new Vector(resultVector);
-	};
-
-	private static final VectorFunction NORMALIZER = (vector, term) ->
-			new Ort(MULTIPLY_TO_CONSTANT.execute(vector, new Vector(1D / vector.length())).coords);
-
 	private final double[] coords;
 
 	public Vector(double... coords) {
@@ -56,15 +32,29 @@ public class Vector implements Tensor, Comparable<Vector> {
 	}
 
 	public Ort normalize() {
-		return (Ort) NORMALIZER.execute(this, ZERO_DIMENSION);
+		return new Ort(multiply(1D / length()).coords);
 	}
 
-	public Vector add(Vector anotherVector) {
-		return ADDER.execute(this, anotherVector);
+	public Vector add(Vector term) {
+		double[] resultVector;
+		if (dimension() >= term.dimension()) {
+			resultVector = getCoordsClone();
+			for (int i = 0; i < term.dimension(); i++)
+				resultVector[i] += term.coords[i];
+		} else {
+			resultVector = term.getCoordsClone();
+			for (int i = 0; i < dimension(); i++)
+				resultVector[i] += coords[i];
+		}
+		return new Vector(resultVector);
 	}
 
 	public Vector multiply(double multiplier) {
-		return MULTIPLY_TO_CONSTANT.execute(this, new Vector(multiplier));
+		Vector term = new Vector(multiplier);
+		double[] resultVector = getCoordsClone();
+		for (int i = 0; i < dimension(); i++)
+			resultVector[i] *= term.coords[0];
+		return new Vector(resultVector);
 	}
 
 	double[] getCoordsClone() {
@@ -76,12 +66,5 @@ public class Vector implements Tensor, Comparable<Vector> {
 	@Override
 	public int compareTo(Vector vector) {
 		return Double.compare(squaredLength(), vector.squaredLength());
-	}
-
-	@FunctionalInterface
-	interface VectorFunction {
-
-		Vector execute(Vector vector, Vector term);
-
 	}
 }

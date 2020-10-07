@@ -9,6 +9,6 @@ public class Ort extends Vector {
 	}
 
 	public Vector denormalize(double length) {
-		return MULTIPLY_TO_CONSTANT.execute(this, new Vector(length));
+		return multiply(length);
 	}
 }
